@@ -177,10 +177,8 @@ contract UserStorage is Ownable {
 	require(flag == 1 || flag ==2);
     if (flag == 1) {
 		user.TradeLimit = SafeMath.sub(oldLimit,_changeAmount);
-		require(SafeMath.sub(oldLimit,_changeAmount) <= oldLimit, "UserStorage: overflow");
     } else if (flag == 2 ) {
 		user.TradeLimit = SafeMath.add(oldLimit,_changeAmount);
-        require(SafeMath.add(oldLimit,_changeAmount) >= oldLimit, "UserStorage: overflow");
 	}
     userList[userIndex[_addr]] = user;
 	}
@@ -211,6 +209,7 @@ contract UserStorage is Ownable {
 		userList[userIndex[addr]] = _user;
     }
 	 function updateMerLever(address addr) public{
+        require(msg.sender == _recordCAddr,"call err");
         User memory _user = users[addr];
         uint256 used;
         if(_user.lever == 1){
@@ -225,24 +224,24 @@ contract UserStorage is Ownable {
         if(_user.lever == 4){
             used = SafeMath.sub(8000 * 10**18,_user.TradeLimit);
         }
-		if(_recordStorage.getAvailableTotal(addr,"AIR") >= 100000000 * 10**18){
+		if(_recordStorage.getAvailableTotal(addr,"AIR") >= 100000000 * 10**18 && _recordStorage.getAvailableTotal(addr,"AIR") < 200000000 * 10**18){
             _user.isLimit = 0;
-            _user.TradeLimit = SafeMath.sub(2000 * 10**18,used) ;
+            _user.TradeLimit = used > 2000 * 10**18 ?  SafeMath.sub(2000 * 10**18,used)  : 0;
             _user.lever = 1;
         }
-        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 200000000 * 10**18){
+        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 200000000 * 10**18 && _recordStorage.getAvailableTotal(addr,"AIR") < 300000000 * 10**18){
             _user.isLimit = 0;
-           _user.TradeLimit = SafeMath.sub(4000 * 10**18,used) ;
+           _user.TradeLimit = used > 4000 * 10**18 ? SafeMath.sub(4000 * 10**18,used) : 0;
             _user.lever = 2;
         }
-        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 300000000 * 10**18){
+        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 300000000 * 10**18  && _recordStorage.getAvailableTotal(addr,"AIR") < 400000000 * 10**18){
             _user.isLimit = 0;
-            _user.TradeLimit = SafeMath.sub(6000 * 10**18,used) ;
+            _user.TradeLimit =  used > 6000 * 10**18 ? SafeMath.sub(6000 * 10**18,used) : 0;
             _user.lever = 3;
         }
-        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 400000000 * 10**18){
+        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 400000000 * 10**18  && _recordStorage.getAvailableTotal(addr,"AIR") < 500000000 * 10**18){
             _user.isLimit = 0;
-            _user.TradeLimit = SafeMath.sub(8000 * 10**18,used) ;
+            _user.TradeLimit =  used > 8000 * 10**18 ? SafeMath.sub(8000 * 10**18,used) : 0 ;
             _user.lever = 4;
         }
         if(_recordStorage.getAvailableTotal(addr,"AIR") >= 500000000 * 10**18){
@@ -251,7 +250,7 @@ contract UserStorage is Ownable {
             _user.lever = 5;
         }
         _user.userFlag = 3;
-        if(_recordStorage.getAvailableTotal(addr,"AIR") == 0){
+        if(_recordStorage.getAvailableTotal(addr,"AIR") < 100000000 * 10**18){
             _user.isLimit = 0;
             _user.TradeLimit = 0;
             _user.lever = 0;
@@ -309,7 +308,7 @@ contract UserStorage is Ownable {
 		emit updateUser(_avatar, _email, _isOnline);
 	}
 	function updateTradeStats(address _addr, TradeStats memory _tradeStats, uint _credit) onlyAuthFromAddr public {
-	    require(msg.sender == _restCAddr || msg.sender == _orderCAddr || msg.sender == _appealCAddr || msg.sender == _recordCAddr, 'UserStorage:Invalid from contract address');
+	    require(msg.sender == _orderCAddr || msg.sender == _appealCAddr || msg.sender == _recordCAddr, 'UserStorage:Invalid from contract address');
 		_updateTradeStats(_addr, _tradeStats, _credit);
 	}
 	function updateMorgageStats(address _addr, MorgageStats memory _morgageStats) onlyAuthFromAddr public {

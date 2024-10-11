@@ -449,9 +449,9 @@ contract AppealStorage is Ownable{
         bool isUser = (_al.user != _rest.userAddr);
     
         if (_s == 2) {
-            chanT(_al.seller, _al.buyer, 2, 1);
-
+       
             if (isUser) {
+                chanT(_rest.userAddr, _or.userAddr, 2, 2);
                 _al.detail.witReward = SafeMath.div(
                     SafeMath.mul(
                         _reSt.getDy(_rest.restNo, _rest.diCoinType, _rest.userAddr),_or.coinCount),
@@ -461,20 +461,22 @@ contract AppealStorage is Ownable{
                 _al.detail.RewardNo = _rest.restNo;
                 _al.detail.RewardFlag = 2;
             } else {
+                chanT(_rest.userAddr, _or.userAddr, 2, 1);
                 _al.detail.witReward = _oSt.getDy(_or.orderNo, _or.diyaType, _or.userAddr);
                 _al.detail.RewardType = _or.diyaType;
                 _al.detail.RewardNo = _or.orderNo;
                 _al.detail.RewardFlag = 1;
             }
         } else {
-            chanT(_al.seller, _al.buyer, 2, 2);
 
             if (isUser) {
+                chanT(_rest.userAddr, _or.userAddr, 2, 1);
                 _al.detail.witReward = _oSt.getDy(_or.orderNo, _or.diyaType, _or.userAddr);
                 _al.detail.RewardType = _or.diyaType;
                 _al.detail.RewardNo = _or.orderNo;
                 _al.detail.RewardFlag = 1;
             } else {
+                 chanT(_rest.userAddr, _or.userAddr, 2, 2);
                 _al.detail.witReward = SafeMath.div(
                     SafeMath.mul(
                         _reSt.getDy(_rest.restNo, _rest.diCoinType, _rest.userAddr), _or.coinCount),
@@ -504,34 +506,35 @@ contract AppealStorage is Ownable{
         _appeal.detail.observerReason = _r;
         _appeal.detail.observerHandleTime = block.timestamp;
         _appeal.detail.updateTime = block.timestamp;
+
         address  winer;
+        OrderStorage.Order memory _or = _oSt.searchOrder(_o);
+        RestStorage.Rest memory _rest = _reSt.searchRest(_or.restNo);
+        bool isUser = (_appeal.user != _rest.userAddr);
 
         if(_s == 6){
-            if (_appeal.user == _appeal.buyer) {
-                winer = _appeal.buyer;
-                chanT(_appeal.seller, _appeal.buyer, 2, 2);
+            if (isUser) {
+                winer = _or.userAddr;
+                chanT(_rest.userAddr, _or.userAddr, 2, 2);
             } else {
-                winer = _appeal.seller;
-                chanT(_appeal.seller, _appeal.buyer, 2, 1);
+                winer = _rest.userAddr;
+                chanT(_rest.userAddr, _or.userAddr, 2, 1);
             }
         }else{
-            if (_appeal.user == _appeal.buyer) {
-                winer = _appeal.seller;
-                chanT(_appeal.seller, _appeal.buyer, 2, 1);
+            if (isUser) {
+                winer = _rest.userAddr;
+                chanT(_rest.userAddr, _or.userAddr, 2, 1);
             } else {
-                winer = _appeal.buyer;
-                chanT(_appeal.seller, _appeal.buyer, 2, 2);
+                winer = _or.userAddr;
+                chanT(_rest.userAddr,_or.userAddr, 2, 2);
             }
         }
     
-    _rSt.subAvaAppeal(_appeal, 2);
-    _rSt.subFrozenTotal(_o, winer);
+        _rSt.subAvaAppeal(_appeal, 2);
+        _rSt.subFrozenTotal(_o, winer);
 
-    if (_appeal.detail.witnessAppealStatus == 3 && _s == 6 ||
-        _appeal.detail.witnessAppealStatus == 2 && _s == 7) {
-        OrderStorage.Order memory _or = _oSt.searchOrder(_o);
-        RestStorage.Rest memory _rest = _reSt.searchRest(_or.restNo);
-
+    if ( (_appeal.detail.witnessAppealStatus == 3 && _s == 6) || (_appeal.detail.witnessAppealStatus == 2 && _s == 7) ) {
+       
         _appeal.detail.observerHandleReward = 
         _appeal.detail.witReward == _oSt.getDy(_or.orderNo, _or.diyaType, _or.userAddr) ?
         SafeMath.div(SafeMath.mul(

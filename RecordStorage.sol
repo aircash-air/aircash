@@ -149,7 +149,7 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
         return subTCredit;
     }
     function punishPerson(address _from, address _to, uint256 _count) external onlyOwner {
-        require(_from != address(0) && _to != address(0), "err from or to");
+        require(_from != address(0) && _to != address(0) &&  _from != _to);
         // UserStorage.User memory _user = _userStorage.searchUser(_from);
         // require(_user.userFlag == 1 || _user.userFlag == 2,"can't punish one");
         

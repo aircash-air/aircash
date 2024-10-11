@@ -199,7 +199,7 @@ contract OrderStorage is Ownable, ReentrancyGuardOrder {
         require(
             orders[_orderNo].orderDetail.sellerAddr == msg.sender ||
             orders[_orderNo].orderDetail.buyerAddr == msg.sender || appealAddress == msg.sender,
-            "Only buyer or seller"
+            "Only buyer or seller or appeal"
         );
         _;
     }
@@ -492,14 +492,7 @@ contract OrderStorage is Ownable, ReentrancyGuardOrder {
     }
     function takeCoin(uint256 _o) external onlyBuyerOrSeller(_o) {
         AppealStorage.Appeal memory _appeal = _appealS.searchAppeal(_o);
-        if (_appeal.detail.observerHandleTime != 0){
-            require(block.timestamp - _appeal.detail.observerHandleTime > canWithdrawHours * 1 hours,
-            "time error"
-        );
-        }
-        require(block.timestamp - _appeal.detail.witnessHandleTime > canWithdrawHours * 1 hours,
-            "time error"
-        );
+        require(block.timestamp - _appeal.detail.witnessHandleTime > canWithdrawHours * 1 hours,"time error");
         address _win;
         if (_appeal.user == _appeal.buyer) {
             if (_appeal.status == 2 ) {
@@ -520,6 +513,7 @@ contract OrderStorage is Ownable, ReentrancyGuardOrder {
         _recordStorage.subFrozenTotal(_o, msg.sender);
     }
     function updateOrderStatus(uint256 _orderNo, uint256 _orderStatus) public{
+        require(msg.sender == appealAddress,"call err");
         _updateOrderStatus(_orderNo,_orderStatus);
     }
     function _updateOrderStatus(uint256 _orderNo, uint256 _orderStatus)internal 

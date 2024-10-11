@@ -156,8 +156,8 @@ contract InvitationStorage is Ownable, ReentrancyGuardInvite {
 
     function withdrawBalance(uint256 amount) public onlyOwner {
         TokenTransfer _tokenTransfer = _recordStorage.getERC20Address("USDT");
-        uint256 balance = _tokenTransfer.balanceOf(msg.sender);
-        require(balance > amount, "balance err");
+        uint256 balance = _tokenTransfer.balanceOf(address(this));
+        require(balance >= amount, "balance err");
         _tokenTransfer.transfer(msg.sender, amount);
         ContractBalance = SafeMath.sub(ContractBalance, amount);
     }

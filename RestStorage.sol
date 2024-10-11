@@ -283,7 +283,6 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
         UserStorage.User memory _user = _userStorage.searchUser(msg.sender);
         require(SafeMath.add(r.restCount,_addCount) <= _user.TradeLimit,"trade limit");
         r.restStatus = 1;
-        r.coinType = bytes(_coinType).length > 0 ? _coinType : r.coinType;
         r.currencyType = bytes(_currencyType).length > 0 ? _currencyType : r.currencyType;
         r.price = _price > 0 ? _price : r.price;
         
