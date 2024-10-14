@@ -328,7 +328,7 @@ contract OrderStorage is Ownable, ReentrancyGuardOrder {
         ) internal view{
         RestStorage.Rest memory _rest = _restStorage.searchRest(_restNo);
         require(_rest.userAddr != msg.sender, "rest not exist");
-        require(_coinCount > 0, "coin count error");
+        require(_coinCount >= 10**19, "low coin count");
         require(_orderAmount > 0, "orderAmount error");
         require(_rest.restStatus == 1, "rest status error");
         uint256 _amo = SafeMath.mul(_rest.price,SafeMath.div(_coinCount,10000));
@@ -349,6 +349,7 @@ contract OrderStorage is Ownable, ReentrancyGuardOrder {
         string memory _dicoinType
         ) internal returns (uint256) {
         RestStorage.Rest memory _rest = _restStorage.searchRest(_restNo);
+
         TokenTransfer _tokenTransfer = _recordStorage.getERC20Address(_rest.coinType);
         uint256 _needSub = SafeMath.add(_coinCount, _tradeFee);
         _tokenTransfer.transferFrom(msg.sender, recordAddress, _needSub);
@@ -440,7 +441,7 @@ contract OrderStorage is Ownable, ReentrancyGuardOrder {
 
     function cancelOrder(uint256 _orderNo) external onlyBuyerOrSeller(_orderNo) returns (bool r) {
         Order memory _order = orders[_orderNo];
-        require(_order.orderStatus == 1,"status err");
+        require(_order.orderStatus == 1 || _order.orderStatus == 2,"status err");
         require(_order.orderNo != uint256(0), "Order does not exist");
 
         if (msg.sender == orders[_orderNo].orderDetail.buyerAddr) {
@@ -475,7 +476,11 @@ contract OrderStorage is Ownable, ReentrancyGuardOrder {
             _restStorage.addRestRemainCount(_order.restNo, _order.coinCount);
             }
             _recordStorage.backDiya(_order.orderNo, getDy(_orderNo, _order.diyaType, _order.userAddr), 2);
-
+            _recordStorage.done(
+                _order.orderDetail.coinType,
+                SafeMath.div(SafeMath.mul(_order.coinCount,12),1000),
+                msg.sender
+                );
             _updateOrderStatus(_orderNo, 4);
             emit OrderCancel(_orderNo);
             buyerApproval[_orderNo] = false;

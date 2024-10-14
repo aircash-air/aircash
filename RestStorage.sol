@@ -244,6 +244,7 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
 		RestUtils._checkParam(_restType, _coinType, _currencyType, _restCount, _price, _payType);
 		uint _restNo = _restNoCounter.current();
         require(rests[_restNo].restNo == uint(0), "rest exist");
+        require(_restDetail.limitAmountFrom >= 10**19,"low");
         require(_restDetail.limitAmountFrom <= _restDetail.limitAmountTo,"form > to");
 		_restDetail.finishCount = 0;
 		_restDetail.remainderCount = _restCount;
@@ -297,7 +298,7 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
         }
         r.diCoinType = bytes(_dicoinType).length > 0 ? _dicoinType : r.diCoinType;
         r.payType = _payType.length > 0 ? _payType : r.payType;
-        r.restDetail.limitAmountFrom = _restDetail.limitAmountFrom > 0 
+        r.restDetail.limitAmountFrom = _restDetail.limitAmountFrom >= 10**19 
             ? (_restDetail.limitAmountFrom > r.restDetail.limitAmountTo ? r.restDetail.limitAmountTo : _restDetail.limitAmountFrom)
             : r.restDetail.limitAmountFrom;
         
@@ -313,7 +314,7 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
             emit RestUpdate(combinedJson);
     }
     function _checkAddrest(uint _restCount)internal view{
-        require(_restCount >0,"count should > 0");
+        require(_restCount >= 10**19,"count should >= 10");
         UserStorage.User memory _user = _userStorage.searchUser(msg.sender);
         require(_user.userFlag == 3, "invalid user");
         require(_restCount <= _user.TradeLimit, "trade limit");

@@ -109,10 +109,9 @@ contract InvitationStorage is Ownable, ReentrancyGuardInvite {
         require(msg.sender == _orderAddr, "Call Addr err");
         address inviter = inviterOf[_trader];
         if (inviter != address(0)) {
-            uint256 totalreward = TradeRewardCount * 2;
+            
             userBalances[_trader] = SafeMath.add(userBalances[_trader], TradeRewardCount);
             userBalances[inviter] = SafeMath.add(userBalances[inviter], TradeRewardCount);
-            ContractBalance = SafeMath.sub(ContractBalance, totalreward);
             TotaluserReward[_trader] = SafeMath.add(userBalances[_trader], TradeRewardCount);
             TotaluserReward[inviter] = SafeMath.add(userBalances[inviter], TradeRewardCount);
         }
@@ -159,7 +158,7 @@ contract InvitationStorage is Ownable, ReentrancyGuardInvite {
         uint256 balance = _tokenTransfer.balanceOf(address(this));
         require(balance >= amount, "balance err");
         _tokenTransfer.transfer(msg.sender, amount);
-        ContractBalance = SafeMath.sub(ContractBalance, amount);
+        ContractBalance = ContractBalance >= amount ? SafeMath.sub(ContractBalance, amount) : 0;
     }
 
     function getInvitedUsers(address _inviter) public view returns (address[] memory, uint256) {
