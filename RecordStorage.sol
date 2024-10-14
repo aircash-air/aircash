@@ -326,7 +326,7 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
         uint256 hadEscorw = availableTotal[msg.sender][airType];
         UserStorage.User memory _user = _userStorage.searchUser(msg.sender);
         if (_roleType == 3) {
-            requiredAmount = SafeMath.sub(leverNeed(_lever),hadEscorw) ; 
+            requiredAmount = leverNeed(_lever) > hadEscorw ? SafeMath.sub(leverNeed(_lever),hadEscorw) : 0; 
             
         } else if (_roleType == 1) {
             require(hadEscorw + _amt >= witnessNeedCount,"less");
