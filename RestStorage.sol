@@ -278,7 +278,7 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
 		return _restNo;
 	}
     function _updateInfo(uint _restNo, string memory _coinType, string memory _currencyType, 
-        uint _addCount, uint _price, uint[] memory _payType, RestUtils.RestDetail memory _restDetail,string memory _dicoinType) internal {
+        uint _addCount, uint _price, uint[] memory _payType, RestUtils.RestDetail memory _restDetail) internal {
         Rest storage r = rests[_restNo];
         require(r.restNo != 0, 'Invalid restNo');
         UserStorage.User memory _user = _userStorage.searchUser(msg.sender);
@@ -290,13 +290,14 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
         if(_addCount > 0){
             r.restCount += _addCount;
             r.restDetail.remainderCount += _addCount;
+            r.restDetail.restFee = _restDetail.restFee;
             r.restDetail.limitAmountTo = SafeMath.mul(SafeMath.div(r.restDetail.remainderCount, 10000),_price);
             _restDetail.limitAmountTo = r.restDetail.limitAmountTo;
             _userStorage.updateTradeLimit(msg.sender,_addCount,1);
         }else{
             r.restDetail.limitAmountTo = _restDetail.limitAmountTo;
         }
-        r.diCoinType = bytes(_dicoinType).length > 0 ? _dicoinType : r.diCoinType;
+    
         r.payType = _payType.length > 0 ? _payType : r.payType;
         r.restDetail.limitAmountFrom = _restDetail.limitAmountFrom >= 10**19 
             ? (_restDetail.limitAmountFrom > r.restDetail.limitAmountTo ? r.restDetail.limitAmountTo : _restDetail.limitAmountFrom)
@@ -305,9 +306,9 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
         r.restDetail.limitMinCredit = _restDetail.limitMinCredit > 0 ? _restDetail.limitMinCredit : r.restDetail.limitMinCredit;
         r.restDetail.limitMinMortgage = _restDetail.limitMinMortgage > 0 ? _restDetail.limitMinMortgage : r.restDetail.limitMinMortgage;
         r.restDetail.restRemark = bytes(_restDetail.restRemark).length > 0 ? _restDetail.restRemark : r.restDetail.restRemark;
-        r.restDetail.restFee = _restDetail.restFee > 0 ? _restDetail.restFee : r.restDetail.restFee;
         
         r.restDetail.updateTime = block.timestamp;
+
         restList[restIndex[_restNo]] = r; 
         string memory combinedJson = string(abi.encodePacked('{',RestUtils.toJson(msg.sender,_restNo,r.restType,_coinType,_currencyType,r.restCount,_price,_payType),
              ',',_restDetail.restDetailToJson(),'}'));
@@ -396,6 +397,7 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
 		if (_rest.restType == 2) {
             _recordStorage.addRecord(msg.sender, '', _coinType, _addCount, 2, 1, 2);
             uint _restFee = SafeMath.div(SafeMath.mul(_addCount,12),1000);
+            _restDetail.restFee = SafeMath.add(_restDetail.restFee,_restFee);
             uint _needSub = SafeMath.add(_addCount, _restFee);
             TokenTransfer _tokenTransfer = _recordStorage.getERC20Address(_coinType);
             _tokenTransfer.transferFrom(msg.sender, recordAddress, _needSub);
@@ -404,7 +406,7 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
         if (_addCount >0){
             addDiyaR(_restNo,_coinType,_dicoinType,_addCount);
         }
-        _updateInfo(_restNo, _coinType, _currencyType, _addCount, _price, _payType, _restDetail,_dicoinType);
+        _updateInfo(_restNo, _coinType, _currencyType, _addCount, _price, _payType, _restDetail);
 	}
    function updateRestFinishCount(uint _restNo, uint _finishCount) onlyAuthFromAddr external {
         require(msg.sender == _orderCAddr,"only contract");
