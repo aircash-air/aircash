@@ -169,6 +169,7 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
     mapping (uint => Rest) private rests;
     mapping (uint => uint) private restIndex;
     Rest[] private restList; 
+    uint authCounter = 0;
 	mapping(address=>mapping(uint=>uint)) restFrozenTotal;
     event RestAdd(string MyJosn);
     event RestUpdate(string MyJosn);
@@ -180,11 +181,13 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
 		_;
 	}
 	function authFromContract(address _recordAddr, address _userAddr, address _orderAddr) external onlyOwner {
+        require(authCounter < 1 ,"auth limit");
 		_orderCAddr = _orderAddr;
         _recordStorage = RecordInterface(_recordAddr);
         _userStorage = UserInterface(_userAddr);
         recordAddress = _recordAddr;
         _restNoCounter.increment();
+        authCounter ++;
 	}
     modifier onlyRestOwner(uint _restNo) {
 		require(rests[_restNo].userAddr == msg.sender, "belong err");
@@ -274,6 +277,7 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
         string memory combinedJson = string(abi.encodePacked('{',RestUtils.toJson(msg.sender,_restNo,_restType,_coinType,_currencyType,_restCount,_price,_payType), 
         ',',_restDetail.restDetailToJson(),'}'));
         latestRestNoByUser[msg.sender] = _restNo;
+
 		emit RestAdd(combinedJson);
 		return _restNo;
 	}
@@ -306,7 +310,7 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
         r.restDetail.limitMinCredit = _restDetail.limitMinCredit > 0 ? _restDetail.limitMinCredit : r.restDetail.limitMinCredit;
         r.restDetail.limitMinMortgage = _restDetail.limitMinMortgage > 0 ? _restDetail.limitMinMortgage : r.restDetail.limitMinMortgage;
         r.restDetail.restRemark = bytes(_restDetail.restRemark).length > 0 ? _restDetail.restRemark : r.restDetail.restRemark;
-        
+
         r.restDetail.updateTime = block.timestamp;
 
         restList[restIndex[_restNo]] = r; 
@@ -355,6 +359,7 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
         Rest storage r = rests[_restNo];
         require(r.restStatus == 1, "status err");
         require(r.restDetail.finishCount < r.restCount, "it done");
+        _userStorage.updateTradeLimit(msg.sender,r.restDetail.remainderCount,2);
         if (r.restType == 1) {
             r.restStatus = 4;
         } else if (r.restType == 2) {
@@ -375,7 +380,7 @@ contract RestStorage is Ownable,ReentrancyGuardRest {
             restFrozenTotal[msg.sender][_restNo] = 0;
         } 
         updateRestStorage(_restNo, r);
-        _userStorage.updateTradeLimit(msg.sender,r.restCount,2);
+
         _recordStorage.backDiya(_restNo,getDy(_restNo,r.diCoinType,r.userAddr),1);
         emit UpdateRestStatus(_restNo,r.restStatus);
     }

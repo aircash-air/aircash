@@ -127,8 +127,12 @@ contract UserStorage is Ownable {
     mapping (address => User) public users;
     mapping (address => uint256) public userIndex;
     User[] public userList; 
+    uint authCounter=0;
     event addUser(address _userAddr);
     event updateUser(string _avatar, string _email, uint _isOnline);
+    event updateUserTrade(address user,uint256 tradeTotal,uint256 restTotal,uint256 credit);
+    event changeUserRole(address user,uint role);
+    event changeUserLevel(address user,uint level);
 	address _restCAddr;
 	address _orderCAddr;
 	address _recordCAddr;
@@ -141,11 +145,13 @@ contract UserStorage is Ownable {
 		_;
 	}
 	function authFromContract(address _fromRest, address _fromOrder, address _fromRecord, address _fromAppeal) external onlyOwner {
+        require(authCounter < 1 ,"auth limit");
 		_restCAddr = _fromRest;
 		_orderCAddr = _fromOrder;
 		_recordCAddr = _fromRecord;
 		_appealCAddr = _fromAppeal;
 		 _recordStorage = RecordInterface(_fromRecord);
+         authCounter ++ ;
 	}
     modifier onlyMemberOf() {
         require(users[msg.sender].userAddr != address(0), 'has no permission');
@@ -258,6 +264,7 @@ contract UserStorage is Ownable {
         }
 		users[addr] = _user;
 		userList[userIndex[addr]] = _user;
+        emit changeUserLevel(_user.userAddr,_user.lever);
     }
 	function _updateTradeStats(address _addr, TradeStats memory _tradeStats, uint _credit) internal {
 		require(_addr != address(0), "UserStorage: _addr null is not allowed");
@@ -268,6 +275,7 @@ contract UserStorage is Ownable {
 		u.tradeStats.restTotal = _tradeStats.restTotal;
 		users[_addr] = u;
 		userList[userIndex[_addr]] = u;
+        emit updateUserTrade(_addr,_tradeStats.tradeTotal,_tradeStats.restTotal,_credit);
 	}
 	function _updateMorgageStats(address _addr, MorgageStats memory _morgageStats) internal {
 		require(_addr != address(0), "UserStorage: _addr null is not allowed");
@@ -308,7 +316,7 @@ contract UserStorage is Ownable {
 		emit updateUser(_avatar, _email, _isOnline);
 	}
 	function updateTradeStats(address _addr, TradeStats memory _tradeStats, uint _credit) onlyAuthFromAddr public {
-	    require(msg.sender == _orderCAddr || msg.sender == _appealCAddr || msg.sender == _recordCAddr, 'UserStorage:Invalid from contract address');
+	    require(msg.sender == _restCAddr ||msg.sender == _orderCAddr || msg.sender == _appealCAddr || msg.sender == _recordCAddr, 'UserStorage:Invalid from contract address');
 		_updateTradeStats(_addr, _tradeStats, _credit);
 	}
 	function updateMorgageStats(address _addr, MorgageStats memory _morgageStats) onlyAuthFromAddr public {
@@ -324,6 +332,7 @@ contract UserStorage is Ownable {
 		u.userFlag = _userFlag;
 	    users[_addr] = u;
 		userList[userIndex[_addr]] = u;
+        emit changeUserRole(_addr,_userFlag);
 	}
 	function searchUser(address _addr) external view returns(User memory user) {
 		return _search(_addr);

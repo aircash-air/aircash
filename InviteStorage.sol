@@ -63,6 +63,7 @@ contract InvitationStorage is Ownable, ReentrancyGuardInvite {
     uint256 public TradeRewardCount = 1 * 10**17; 
     uint256 public withdrawalFee = 5 * 10**17;
     uint256 public ContractBalance;
+    uint authCounter=0;
     mapping(address => address) public inviterOf;
     mapping(address => uint256) public userBalances;
     mapping(address => uint256) public TotaluserReward;
@@ -85,11 +86,13 @@ contract InvitationStorage is Ownable, ReentrancyGuardInvite {
         address _FormRecord,
         address _ForomOrder
     ) external onlyOwner {
+        require(authCounter < 1 ,"auth limit");
         _userAddr = _FormUser;
         _orderAddr = _ForomOrder;
         _userStorage = UserInterface(_FormUser);
         _recordStorage = RecordInterface(_FormRecord);
         _inviteNoCounter.increment();
+        authCounter++;
     }
 
     function invite(address _inviter) public {
@@ -109,7 +112,7 @@ contract InvitationStorage is Ownable, ReentrancyGuardInvite {
         require(msg.sender == _orderAddr, "Call Addr err");
         address inviter = inviterOf[_trader];
         if (inviter != address(0)) {
-            
+
             userBalances[_trader] = SafeMath.add(userBalances[_trader], TradeRewardCount);
             userBalances[inviter] = SafeMath.add(userBalances[inviter], TradeRewardCount);
             TotaluserReward[_trader] = SafeMath.add(userBalances[_trader], TradeRewardCount);
@@ -142,7 +145,8 @@ contract InvitationStorage is Ownable, ReentrancyGuardInvite {
         require(_inviter != address(0));
         require(_invitee != address(0));
         require(_inviter != _invitee, "can't invite self");
-        require(_userStorage.isMemberOfOne(_invitee) == false, "already User");
+        require(_userStorage.isMemberOfOne(_inviter) == true, "inviter not User");
+        require(_userStorage.isMemberOfOne(_invitee) == false, "invitee already User");
         require(!isInvited[_invitee], "one already invited.");
         return true;
     }

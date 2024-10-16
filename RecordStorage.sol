@@ -86,25 +86,18 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
     function getCongress()public view returns(address){
        return congress;
     }
-    function setrewardHander(address addr) external onlyOwner {
-        rewardHander = addr;
-    }
-
     function getrewardHander() public view returns (address) {
         return rewardHander;
     }
-    function setM(address addr) external onlyOwner {
-        M = addr;
+    function setMTH(address _M,address _T,address _rewardHander) external onlyOwner {
+        M = _M;
+        T = _T;
+        rewardHander = _rewardHander;
     }
 
     function getM() public view returns (address) {
         return M;
     }
-
-    function setT(address addr) external onlyOwner {
-        T = addr;
-    }
-
     function getT() public view returns (address) {
         return T;
     }
@@ -148,6 +141,7 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
     function getSubTCredit() public view  returns (uint256) {
         return subTCredit;
     }
+    event punish(address _from, address _to, uint256 _count);
     function punishPerson(address _from, address _to, uint256 _count) external onlyOwner {
         require(_from != address(0) && _to != address(0) &&  _from != _to);
         // UserStorage.User memory _user = _userStorage.searchUser(_from);
@@ -167,6 +161,7 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
                     SafeMath.sub(_count, _ava)
                 );
                 availableTotal[_to]["AIR"] = SafeMath.add(_toavailab, _count);
+                _unApplyUnfrozen(_from);
             } else {
                 withdrawingTotal[_from]["AIR"] = 0;
                 availableTotal[_to]["AIR"] = SafeMath.add(
@@ -177,6 +172,8 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
         }
         chanRole(_from);
         chanRole(_to);
+        emit punish(_from,_to,_count);
+        
     }
     UserInterface private _userStorage;
     OrderInterface private _orderStorage;
@@ -205,6 +202,7 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
     mapping(address => mapping(uint256 => uint256)) lastWithdrawAmount;
     mapping(address => mapping(string => uint256)) public withdrawingTotal;
     mapping(address => mapping(uint256 => uint256)) orderSubFrozenList;
+    uint authCounter =0;
     constructor(
         address _usdtAddress,
         address _airAddress
@@ -248,10 +246,10 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
     address _orderCAddr;
     address _appealCAddr;
     modifier onlyAuthFromAddr() {
-        require(_userAddr != address(0), "nil Uaddr");
-        require(_restCAddr != address(0), "nil Raddr");
-        require(_orderCAddr != address(0), "nil Oaddr");
-        require(_appealCAddr != address(0), "nil Aaddr");
+        require(_userAddr != address(0), "nil U");
+        require(_restCAddr != address(0), "nil R");
+        require(_orderCAddr != address(0), "nil O");
+        require(_appealCAddr != address(0), "nil A");
         _;
     }
    
@@ -261,6 +259,7 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
         address _fromOrder,
         address _fromAppeal
     ) external onlyOwner {
+        require(authCounter < 1);
         _userAddr = _fromUser;
         _restCAddr = _fromRest;
         _orderCAddr = _fromOrder;
@@ -269,6 +268,7 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
         _orderStorage = OrderInterface(_orderCAddr);
         _restStorage = RestInterface(_restCAddr);
         _appealStorage = AppealInterface(_appealCAddr);
+        authCounter ++;
     }
     function _insert(
         address _addr,
@@ -399,6 +399,7 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
         );
         TokenTransfer _tokenTransfer = getERC20Address(_coinType);
         _tokenTransfer.transfer(_addr, _amt);
+    
     }
     function getAvailableTotal(address _addr, string memory _coinType)public view returns(uint256){
         return availableTotal[_addr][_coinType];
@@ -423,14 +424,14 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
      
     function subFrozenTotal(uint256 _orderNo, address _addr)public onlyAuthFromAddr{
         require(msg.sender == _orderCAddr || msg.sender == _appealCAddr,
-            "Invalid from contract address"
+            "err call addr"
         );
         OrderStorage.Order memory _order = _orderStorage.searchOrder(_orderNo);
         require(_order.orderNo != uint256(0), "order not exist");
         address _seller = _order.orderDetail.sellerAddr;
         string memory _coinType = _order.orderDetail.coinType;
         uint256 _subAmount = orderSubFrozenList[_seller][_orderNo];
-        require(_subAmount == 0, "order not exist");
+        require(_subAmount == 0, "subAmount nil");
         uint256 _frozen = frozenTotal[_seller][_coinType];
         uint256 _orderCount = _order.coinCount;
         require(_frozen >= _orderCount, "err amount");
@@ -475,23 +476,26 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
         _tokenTransfer.transfer(recipient, rewardToTransfer/2);
         _tokenTransfer.transfer(rewardHander, rewardToTransfer/2);
         _appealStorage.zeroReward(_orderNo);
-     
-        address _lose;
-        if (_appeal.user == _appeal.buyer) {
-            _lose = (_appeal.status == 2 || _appeal.status == 6) ? _appeal.seller : _appeal.buyer;
-        } else {
-            _lose = (_appeal.status == 2 || _appeal.status == 6) ? _appeal.buyer : _appeal.seller;
-        }
 
         OrderStorage.Order memory _order = _orderStorage.searchOrder(_orderNo);
+        RestStorage.Rest memory _rest = _restStorage.searchRest(_order.restNo);
+
+        address _lose;
+        if (_appeal.user == _order.userAddr) {
+            _lose = (_appeal.status == 2 || _appeal.status == 6) ? _rest.userAddr : _order.userAddr;
+        } else {
+            _lose = (_appeal.status == 2 || _appeal.status == 6) ? _order.userAddr : _rest.userAddr;
+        }
+
+        
         if (_appeal.detail.RewardFlag == 1) {
             _orderStorage.zeroDiya(_appeal.detail.RewardNo, _appeal.detail.RewardType, _lose);
         } else if (_appeal.detail.RewardFlag == 2) {
             _restStorage.subDiya(_appeal.detail.RewardNo,_appeal.detail.RewardType,_lose,rewardToTransfer);
             backDiya(_order.orderNo,_orderStorage.getDy(_orderNo, _order.diyaType, _order.userAddr),2);
         }
-    RestStorage.Rest memory _rest = _restStorage.searchRest(_order.restNo);
-    done(_rest.coinType,SafeMath.div(SafeMath.mul(_order.coinCount,12),1000),address(0));
+   
+        done(_rest.coinType,SafeMath.div(SafeMath.mul(_order.coinCount,12),1000),address(0));
     }
 
     function _changeUserMorgageStats(address _addr, uint256 _amt) internal {
@@ -534,6 +538,18 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
          emit RecordApplyUnfrozen(msg.sender, _amt);
         _insert(msg.sender, "", airType, _amt, 3, 3, 2); 
         return getAvailableTotal(msg.sender, airType);
+    }
+    function _unApplyUnfrozen(address _addr) internal {
+        uint256 _drawing = withdrawingTotal[_addr]["AIR"];
+        require(_drawing > 0, "sufficient");
+        withdrawingTotal[_addr]["AIR"] = 0;
+        availableTotal[_addr]["AIR"] = SafeMath.add(
+            availableTotal[_addr]["AIR"],
+            _drawing
+        );
+        availableTotal[_addr]["AIR"] <  witnessNeedCount 
+        ? _userStorage.updateMerLever(_addr) : chanRole(_addr);
+      
     }
     function unApplyUnfrozen(address _addr) external onlyOwner {
         uint256 _drawing = withdrawingTotal[_addr]["AIR"];

@@ -86,6 +86,7 @@ contract OrderStorage is Ownable, ReentrancyGuardOrder {
     mapping(uint256 => Order) private orders;
     mapping(uint256 => uint256) private orderIndex;
     Order[] private orderList;
+    uint authCounter =0;
     mapping(address => mapping(uint256 => uint256)) orderFrozenTotal;
     uint256 cancelOrderTime = 1;
     function addDiya(uint256 _orderNo,string memory CoinType, string memory DiCoinType, uint256 amount) 
@@ -160,6 +161,7 @@ contract OrderStorage is Ownable, ReentrancyGuardOrder {
         address _appealAddr,
         address _inviteAddr
     ) external onlyOwner {
+        require(authCounter < 1 ,"auth limit");
         _recordStorage = RecordInterface(_recordAddr);
         _restStorage = RestStorage(_restAddr);
         _userStorage = UserInterface(_userAddr);
@@ -168,6 +170,7 @@ contract OrderStorage is Ownable, ReentrancyGuardOrder {
         _appealS = AppealInterface(_appealAddr);
         _inviteStorage = InviteInterface(_inviteAddr);
         _orderNoCounter.increment();
+        authCounter ++;
     }
     modifier onlyBuyer(uint256 _orderNo) {
         require(_orderNo != uint256(0), "orderNo null");

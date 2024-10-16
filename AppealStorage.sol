@@ -273,6 +273,7 @@ contract AppealStorage is Ownable{
     mapping(uint256 => Appeal) public appeals;
     mapping(uint256 => uint256) public appealIndex;
     Appeal[] public appealList;
+    uint authCounter = 0;
     event addAppeal(uint256 _appealNo, uint256 _orderNo,address buyer,address seller,address user);
     event addFinal(uint256 _appeal, uint256 _orderNo,uint256 status);
     event takeWitness(uint256 _appealNo,uint256 _orderNo,address witness);
@@ -284,11 +285,13 @@ contract AppealStorage is Ownable{
         address _o,
         address _u,
         address _re) external onlyOwner {
+        require(authCounter < 1 ,"auth limit");
 		_rSt = RecordInterface(_r);
         _oSt = OrderInterface(_o);
         _uSt = UserInterface(_u);
         _reSt = RestInterface(_re);
         recAddr = _r;
+        authCounter ++;
 	}
     modifier onlyWit(uint256 _o) {
         Appeal memory _al = appeals[_o];
