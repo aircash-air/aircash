@@ -54,6 +54,7 @@ interface TokenTransfer {
         external
         view
         returns (uint256 remaining);
+
 }
 contract RecordStorage is Ownable, ReentrancyGuardRecord {
     using CountersRecord for CountersRecord.Counter;
@@ -263,7 +264,7 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
         _userAddr = _fromUser;
         _restCAddr = _fromRest;
         _orderCAddr = _fromOrder;
-        _appealCAddr = _fromAppeal;
+        _appealCAddr = _fromAppeal;            
         _userStorage = UserInterface(_userAddr);
         _orderStorage = OrderInterface(_orderCAddr);
         _restStorage = RestInterface(_restCAddr);
@@ -552,16 +553,7 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
       
     }
     function unApplyUnfrozen(address _addr) external onlyOwner {
-        uint256 _drawing = withdrawingTotal[_addr]["AIR"];
-        require(_drawing > 0, "sufficient");
-        withdrawingTotal[_addr]["AIR"] = 0;
-        availableTotal[_addr]["AIR"] = SafeMath.add(
-            availableTotal[_addr]["AIR"],
-            _drawing
-        );
-        availableTotal[_addr]["AIR"] <  witnessNeedCount 
-        ? _userStorage.updateMerLever(_addr) : chanRole(_addr);
-      
+        _unApplyUnfrozen(_addr);
     }
    function chanRole(address _addr) internal {
         uint256 _avail = availableTotal[_addr]["AIR"];

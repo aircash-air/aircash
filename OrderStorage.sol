@@ -444,7 +444,7 @@ contract OrderStorage is Ownable, ReentrancyGuardOrder {
 
     function cancelOrder(uint256 _orderNo) external onlyBuyerOrSeller(_orderNo) returns (bool r) {
         Order memory _order = orders[_orderNo];
-        require(_order.orderStatus == 1 || _order.orderStatus == 2,"status err");
+        require(_order.orderStatus == 1,"status err");
         require(_order.orderNo != uint256(0), "Order does not exist");
 
         if (msg.sender == orders[_orderNo].orderDetail.buyerAddr) {
