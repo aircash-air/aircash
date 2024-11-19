@@ -59,8 +59,8 @@ interface TokenTransfer {
 contract RecordStorage is Ownable, ReentrancyGuardRecord {
     using CountersRecord for CountersRecord.Counter;
     mapping(string =>address) coinTypeMaping;
-    uint256 merchantNeedCount = 100000000 * (10**18);
-    uint256 witnessNeedCount  = 600000000 * (10**18);
+    uint256 merchantNeedCount = 1000000 * (10**18);
+    uint256 witnessNeedCount  = 100000000 * (10**18);
     uint256 canWithdrawToTime = 7;
     uint256 canTakeRewardTime = 24;
     uint256 tradeCredit = 1;
@@ -316,7 +316,7 @@ contract RecordStorage is Ownable, ReentrancyGuardRecord {
     }
     function leverNeed(uint256 _lever)private view returns(uint256 need){
         require(_lever >= 1 && _lever <=5);
-        return merchantNeedCount + ( (_lever - 1) * (100000000 * 10**18) );
+        return merchantNeedCount + ( (_lever - 1) * (1000000 * 10**18) );
     }
  
     function tokenEscrow(uint256 _roleType,uint256 _amt,uint256 _lever) external {

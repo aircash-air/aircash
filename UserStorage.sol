@@ -230,33 +230,33 @@ contract UserStorage is Ownable {
         if(_user.lever == 4){
             used = SafeMath.sub(8000 * 10**18,_user.TradeLimit);
         }
-		if(_recordStorage.getAvailableTotal(addr,"AIR") >= 100000000 * 10**18 && _recordStorage.getAvailableTotal(addr,"AIR") < 200000000 * 10**18){
+		if(_recordStorage.getAvailableTotal(addr,"AIR") >= 1000000 * 10**18 && _recordStorage.getAvailableTotal(addr,"AIR") < 2000000 * 10**18){
             _user.isLimit = 0;
             _user.TradeLimit = used <= 2000 * 10**18 ?  SafeMath.sub(2000 * 10**18,used)  : 0;
             _user.lever = 1;
         }
-        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 200000000 * 10**18 && _recordStorage.getAvailableTotal(addr,"AIR") < 300000000 * 10**18){
+        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 2000000 * 10**18 && _recordStorage.getAvailableTotal(addr,"AIR") < 3000000 * 10**18){
             _user.isLimit = 0;
            _user.TradeLimit = used <= 4000 * 10**18 ? SafeMath.sub(4000 * 10**18,used) : 0;
             _user.lever = 2;
         }
-        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 300000000 * 10**18  && _recordStorage.getAvailableTotal(addr,"AIR") < 400000000 * 10**18){
+        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 3000000 * 10**18  && _recordStorage.getAvailableTotal(addr,"AIR") < 4000000 * 10**18){
             _user.isLimit = 0;
             _user.TradeLimit =  used <= 6000 * 10**18 ? SafeMath.sub(6000 * 10**18,used) : 0;
             _user.lever = 3;
         }
-        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 400000000 * 10**18  && _recordStorage.getAvailableTotal(addr,"AIR") < 500000000 * 10**18){
+        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 4000000 * 10**18  && _recordStorage.getAvailableTotal(addr,"AIR") < 5000000 * 10**18){
             _user.isLimit = 0;
             _user.TradeLimit =  used <= 8000 * 10**18 ? SafeMath.sub(8000 * 10**18,used) : 0 ;
             _user.lever = 4;
         }
-        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 500000000 * 10**18){
+        if(_recordStorage.getAvailableTotal(addr,"AIR") >= 5000000 * 10**18){
 			_user.TradeLimit = 9999999999999 * 10**18;
             _user.isLimit = 1 ;
             _user.lever = 5;
         }
         _user.userFlag = 3;
-        if(_recordStorage.getAvailableTotal(addr,"AIR") < 100000000 * 10**18){
+        if(_recordStorage.getAvailableTotal(addr,"AIR") < 1000000 * 10**18){
             _user.isLimit = 0;
             _user.TradeLimit = 0;
             _user.lever = 0;
